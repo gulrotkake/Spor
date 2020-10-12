@@ -1,1 +1,1 @@
-# Spor
+# Spor - an amazing project
