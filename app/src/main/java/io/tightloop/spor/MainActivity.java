@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 runOnUiThread(() -> {
                     if (sporService != null) {
-                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.elevation);
+                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.alt);
                     } else {
                         updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN);
                     }
@@ -83,13 +83,13 @@ public class MainActivity extends AppCompatActivity {
         stopTrackingService();
     }
 
-    private void updateUILocationLabels(double lat, double lng, double ele) {
+    private void updateUILocationLabels(double lat, double lng, double alt) {
         TextView lngView = findViewById(R.id.lng);
         TextView latView = findViewById(R.id.lat);
-        TextView eleView = findViewById(R.id.ele);
+        TextView altView = findViewById(R.id.alt);
         lngView.setText((Double.isNaN(lng) ? "-" : Double.toString(lng)));
         latView.setText((Double.isNaN(lat) ? "-" : Double.toString(lat)));
-        eleView.setText((Double.isNaN(ele) ? "-" : Double.toString(ele)));
+        altView.setText((Double.isNaN(alt) ? "-" : Double.toString(alt)));
     }
 
     private void startTrackingService() {

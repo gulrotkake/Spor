@@ -35,7 +35,7 @@ public class SporService extends Service implements LocationListener {
     private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyyMMddHHmmss'Z'", Locale.US);
     private static final int NOTIFICATION_ID = 1725186441;
 
-    public double elevation = Double.NaN;
+    public double alt = Double.NaN;
     public double lat = Double.NaN;
     public double lng = Double.NaN;
     public long distanceInCentimeters = 0;
@@ -117,7 +117,7 @@ public class SporService extends Service implements LocationListener {
     public void onDestroy() {
         super.onDestroy();
         deactivate();
-        lat = lng = elevation = Double.NaN;
+        lat = lng = alt = Double.NaN;
         distanceInCentimeters = 0;
     }
 
@@ -136,22 +136,22 @@ public class SporService extends Service implements LocationListener {
 
         double lat = location.getLatitude();
         double lng = location.getLongitude();
-        double elevation = location.getAltitude();
+        double alt = location.getAltitude();
 
-        if (!Double.isNaN(this.lat) && !Double.isNaN(this.lng) && !Double.isNaN(this.elevation)) {
-            distanceInCentimeters += Math.round(DistanceUtil.distanceInMeters(this.lat, lat, this.lng, lng, this.elevation, elevation) * 100);
+        if (!Double.isNaN(this.lat) && !Double.isNaN(this.lng) && !Double.isNaN(this.alt)) {
+            distanceInCentimeters += Math.round(DistanceUtil.distanceInMeters(this.lat, lat, this.lng, lng, this.alt, alt) * 100);
         }
 
         this.lat = lat;
         this.lng = lng;
-        this.elevation = elevation;
+        this.alt = alt;
 
         long timestamp = location.getTime();
 
         try {
             currentFile.writeDouble(lat);
             currentFile.writeDouble(lng);
-            currentFile.writeDouble(elevation);
+            currentFile.writeDouble(alt);
             currentFile.writeLong(timestamp);
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -19,7 +19,7 @@
         app:layout_constraintTop_toBottomOf="@+id/lng" />
 
     <TextView
-        android:id="@+id/ele"
+        android:id="@+id/alt"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
