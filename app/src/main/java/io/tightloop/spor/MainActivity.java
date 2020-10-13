@@ -50,14 +50,11 @@ public class MainActivity extends AppCompatActivity {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (sporService != null) {
-                            updateUILocationLabels(sporService.lat, sporService.lng, sporService.elevation);
-                        } else {
-                            updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN);
-                        }
+                runOnUiThread(() -> {
+                    if (sporService != null) {
+                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.elevation);
+                    } else {
+                        updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN);
                     }
                 });
             }
