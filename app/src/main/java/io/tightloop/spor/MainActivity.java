@@ -81,21 +81,21 @@ public class MainActivity extends AppCompatActivity {
         final Intent intent = new Intent(this.getApplication(), SporService.class);
         this.getApplication().startService(intent);
         this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        sporing = true;
     }
 
     private void stopTrackingService() {
         this.getApplication().unbindService(serviceConnection);
         final Intent intent = new Intent(this.getApplication(), SporService.class);
         this.getApplication().stopService(intent);
+        sporing = false;
     }
 
     public void onTrackingButtonClicked(View view) {
         if (sporing) {
             stopTrackingService();
-            sporing = false;
         } else {
             startTrackingService();
-            sporing = true;
         }
         updateButtonAppearance();
     }
