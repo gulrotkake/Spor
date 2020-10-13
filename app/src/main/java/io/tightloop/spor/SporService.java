@@ -38,6 +38,7 @@ public class SporService extends Service implements LocationListener {
     public double elevation = Double.NaN;
     public double lat = Double.NaN;
     public double lng = Double.NaN;
+    public long distanceInCentimeters = 0;
 
     public class SporServiceBinder extends Binder {
         public SporService getService() {
@@ -75,7 +76,7 @@ public class SporService extends Service implements LocationListener {
         }
         File storageDir = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "spor");
         if (storageDir.mkdirs()) {
-            Log.i("SporService", "Created storage directory "+storageDir);
+            Log.i("SporService", "Created storage directory " + storageDir);
         }
         String dateString = DATE_FMT.format(new Date());
         File path = new File(storageDir, String.format("%s-%s.spor", getString(R.string.app_name), dateString));
@@ -102,6 +103,7 @@ public class SporService extends Service implements LocationListener {
             }
         }
     }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     private Notification getNotification() {
         NotificationChannel channel = new NotificationChannel("channel_01", "My Channel", NotificationManager.IMPORTANCE_DEFAULT);
@@ -116,6 +118,7 @@ public class SporService extends Service implements LocationListener {
         super.onDestroy();
         deactivate();
         lat = lng = elevation = Double.NaN;
+        distanceInCentimeters = 0;
     }
 
     @Override
@@ -131,9 +134,17 @@ public class SporService extends Service implements LocationListener {
             return;
         }
 
-        lat = location.getLatitude();
-        lng = location.getLongitude();
-        elevation = location.getAltitude();
+        double lat = location.getLatitude();
+        double lng = location.getLongitude();
+        double elevation = location.getAltitude();
+
+        if (!Double.isNaN(this.lat) && !Double.isNaN(this.lng) && !Double.isNaN(this.elevation)) {
+            distanceInCentimeters += Math.round(DistanceUtil.distanceInMeters(this.lat, lat, this.lng, lng, this.elevation, elevation) * 100);
+        }
+
+        this.lat = lat;
+        this.lng = lng;
+        this.elevation = elevation;
 
         long timestamp = location.getTime();
 
