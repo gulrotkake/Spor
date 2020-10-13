@@ -1,7 +1,6 @@
 package io.tightloop.spor;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -14,15 +13,23 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Stream;
+
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 public class MainActivity extends AppCompatActivity {
     private Timer timer;
     private SporService sporService;
     private boolean sporing = false;
 
-    private ServiceConnection serviceConnection = new ServiceConnection() {
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             String name = className.getClassName();
             if (name.endsWith("SporService")) {
@@ -38,6 +45,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+    private final ActivityResultLauncher<String[]> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), grantedPermissions -> {
+                if (grantedPermissions.values().stream().allMatch(Boolean.TRUE::equals)) {
+                    startTrackingService();
+                    updateButtonAppearance();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,10 +93,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startTrackingService() {
-        final Intent intent = new Intent(this.getApplication(), SporService.class);
-        this.getApplication().startService(intent);
-        this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-        sporing = true;
+        String[] missingPermissions = Stream.of(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE).filter(permission -> ActivityCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED).toArray(String[]::new);
+
+        if (missingPermissions.length == 0) {
+            final Intent intent = new Intent(this.getApplication(), SporService.class);
+            this.getApplication().startService(intent);
+            this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+            sporing = true;
+        } else {
+            requestPermissionLauncher.launch(missingPermissions);
+        }
     }
 
     private void stopTrackingService() {
