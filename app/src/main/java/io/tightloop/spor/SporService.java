@@ -46,7 +46,7 @@ public class SporService extends Service implements LocationListener {
     }
 
     private LocationManager locationManager;
-    private SporServiceBinder bind = new SporServiceBinder();
+    private final SporServiceBinder bind = new SporServiceBinder();
     private DataOutputStream currentFile = null;
 
     public SporService() {
