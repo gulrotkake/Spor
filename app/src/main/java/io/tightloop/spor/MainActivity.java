@@ -67,9 +67,9 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 runOnUiThread(() -> {
                     if (sporService != null) {
-                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.alt);
+                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.alt, sporService.distanceInCentimeters / 100.);
                     } else {
-                        updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN);
+                        updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN, Double.NaN);
                     }
                 });
             }
@@ -83,13 +83,15 @@ public class MainActivity extends AppCompatActivity {
         stopTrackingService();
     }
 
-    private void updateUILocationLabels(double lat, double lng, double alt) {
+    private void updateUILocationLabels(double lat, double lng, double alt, double distance) {
         TextView lngView = findViewById(R.id.lng);
         TextView latView = findViewById(R.id.lat);
         TextView altView = findViewById(R.id.alt);
+        TextView distanceView = findViewById(R.id.distance);
         lngView.setText((Double.isNaN(lng) ? "-" : Double.toString(lng)));
         latView.setText((Double.isNaN(lat) ? "-" : Double.toString(lat)));
         altView.setText((Double.isNaN(alt) ? "-" : Double.toString(alt)));
+        distanceView.setText((Double.isNaN(distance) ? "-" : Double.toString(distance)));
     }
 
     private void startTrackingService() {
