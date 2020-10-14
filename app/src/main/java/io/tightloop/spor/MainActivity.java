@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Stream;
@@ -88,10 +89,10 @@ public class MainActivity extends AppCompatActivity {
         TextView latView = findViewById(R.id.lat);
         TextView altView = findViewById(R.id.alt);
         TextView distanceView = findViewById(R.id.distance);
-        lngView.setText((Double.isNaN(lng) ? "-" : Double.toString(lng)));
-        latView.setText((Double.isNaN(lat) ? "-" : Double.toString(lat)));
-        altView.setText((Double.isNaN(alt) ? "-" : Double.toString(alt)));
-        distanceView.setText((Double.isNaN(distance) ? "-" : Double.toString(distance)));
+        lngView.setText(Double.isNaN(lng) ? "-" : String.format(Locale.US, "%.6f", lng));
+        latView.setText(Double.isNaN(lat) ? "-" : String.format(Locale.US, "%.6f", lat));
+        altView.setText(Double.isNaN(alt) ? "-" : String.format(Locale.US, "%.2f", alt));
+        distanceView.setText(Double.isNaN(distance) ? "-" : String.format(Locale.US, "%.0fm", distance));
     }
 
     private void startTrackingService() {
