@@ -8,9 +8,11 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.text.Layout;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.GridLayout;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -68,9 +70,9 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 runOnUiThread(() -> {
                     if (sporService != null) {
-                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.alt, sporService.distanceInCentimeters / 100.);
+                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.alt, sporService.distanceInCentimeters);
                     } else {
-                        updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN, Double.NaN);
+                        updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN, 0);
                     }
                 });
             }
@@ -84,15 +86,21 @@ public class MainActivity extends AppCompatActivity {
         stopTrackingService();
     }
 
-    private void updateUILocationLabels(double lat, double lng, double alt, double distance) {
-        TextView lngView = findViewById(R.id.lng);
-        TextView latView = findViewById(R.id.lat);
-        TextView altView = findViewById(R.id.alt);
-        TextView distanceView = findViewById(R.id.distance);
-        lngView.setText(Double.isNaN(lng) ? "-" : String.format(Locale.US, "%.6f", lng));
-        latView.setText(Double.isNaN(lat) ? "-" : String.format(Locale.US, "%.6f", lat));
-        altView.setText(Double.isNaN(alt) ? "-" : String.format(Locale.US, "%.2f", alt));
-        distanceView.setText(Double.isNaN(distance) ? "-" : String.format(Locale.US, "%.0fm", distance));
+    private void updateUILocationLabels(double lat, double lng, double alt, long distance) {
+        GridLayout layout = findViewById(R.id.grid);
+        if (Double.isNaN(lat) && Double.isNaN(lng) && Double.isNaN(alt) && distance == 0) {
+            layout.setVisibility(View.INVISIBLE);
+        } else {
+            TextView lngView = findViewById(R.id.lng);
+            TextView latView = findViewById(R.id.lat);
+            TextView altView = findViewById(R.id.alt);
+            TextView distanceView = findViewById(R.id.dst);
+            layout.setVisibility(View.VISIBLE);
+            lngView.setText(Double.isNaN(lng) ? "-" : String.format(Locale.US, "%.6f", lng));
+            latView.setText(Double.isNaN(lat) ? "-" : String.format(Locale.US, "%.6f", lat));
+            altView.setText(Double.isNaN(alt) ? "-" : String.format(Locale.US, "%.2f", alt));
+            distanceView.setText(Double.isNaN(distance) ? "-" : String.format(Locale.US, "%.0fm", distance / 100.));
+        }
     }
 
     private void startTrackingService() {
