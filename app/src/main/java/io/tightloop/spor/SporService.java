@@ -16,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -34,23 +35,28 @@ import java.util.concurrent.TimeUnit;
 public class SporService extends Service implements LocationListener {
     private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyyMMddHHmmss'Z'", Locale.US);
     private static final int NOTIFICATION_ID = 1725186441;
-
+    private final SporServiceBinder bind = new SporServiceBinder();
     public double alt = Double.NaN;
     public double lat = Double.NaN;
     public double lng = Double.NaN;
     public long distanceInCentimeters = 0;
-
-    public class SporServiceBinder extends Binder {
-        public SporService getService() {
-            return SporService.this;
-        }
-    }
-
+    private long startTimestamp = 0;
+    private long elapsedNanosLastUpdate = 0;
+    private long startNanos = 0;
     private LocationManager locationManager;
-    private final SporServiceBinder bind = new SporServiceBinder();
     private DataOutputStream currentFile = null;
 
     public SporService() {
+    }
+
+    public long getElapsedNanos() {
+        return startNanos > 0 ? SystemClock.elapsedRealtimeNanos() - startNanos : 0;
+    }
+
+    public double getSpeedInMetersPerSecond() {
+        // We use elapsedNanosLastUpdate for calculation, as that's when our distance was last updated.
+        double seconds = TimeUnit.NANOSECONDS.toSeconds(elapsedNanosLastUpdate);
+        return seconds == 0 ? 0 : (distanceInCentimeters / 100.) / seconds;
     }
 
     @Override
@@ -89,6 +95,8 @@ public class SporService extends Service implements LocationListener {
         }
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, TimeUnit.SECONDS.toMillis(5), 5, this);
+        startNanos = SystemClock.elapsedRealtimeNanos();
+        startTimestamp = System.currentTimeMillis();
     }
 
     private void deactivate() {
@@ -118,7 +126,7 @@ public class SporService extends Service implements LocationListener {
         super.onDestroy();
         deactivate();
         lat = lng = alt = Double.NaN;
-        distanceInCentimeters = 0;
+        distanceInCentimeters = startNanos = startTimestamp = elapsedNanosLastUpdate = 0;
     }
 
     @Override
@@ -145,8 +153,8 @@ public class SporService extends Service implements LocationListener {
         this.lat = lat;
         this.lng = lng;
         this.alt = alt;
-
-        long timestamp = location.getTime();
+        this.elapsedNanosLastUpdate = location.getElapsedRealtimeNanos() - startNanos;
+        long timestamp = startTimestamp + TimeUnit.NANOSECONDS.toMillis(elapsedNanosLastUpdate);
 
         try {
             currentFile.writeDouble(lat);
@@ -168,5 +176,11 @@ public class SporService extends Service implements LocationListener {
 
     @Override
     public void onProviderDisabled(@NonNull String provider) {
+    }
+
+    public class SporServiceBinder extends Binder {
+        public SporService getService() {
+            return SporService.this;
+        }
     }
 }

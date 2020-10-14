@@ -8,7 +8,6 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.text.Layout;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -23,6 +22,7 @@ import androidx.core.app.ActivityCompat;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -70,13 +70,13 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 runOnUiThread(() -> {
                     if (sporService != null) {
-                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.alt, sporService.distanceInCentimeters);
+                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.alt, sporService.distanceInCentimeters, sporService.getSpeedInMetersPerSecond(), sporService.getElapsedNanos());
                     } else {
-                        updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN, 0);
+                        updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN, 0, 0, 0);
                     }
                 });
             }
-        }, 1000, 5000);
+        }, 1000, 2500);
     }
 
     @Override
@@ -86,21 +86,19 @@ public class MainActivity extends AppCompatActivity {
         stopTrackingService();
     }
 
-    private void updateUILocationLabels(double lat, double lng, double alt, long distance) {
-        GridLayout layout = findViewById(R.id.grid);
-        if (Double.isNaN(lat) && Double.isNaN(lng) && Double.isNaN(alt) && distance == 0) {
-            layout.setVisibility(View.INVISIBLE);
-        } else {
-            TextView lngView = findViewById(R.id.lng);
-            TextView latView = findViewById(R.id.lat);
-            TextView altView = findViewById(R.id.alt);
-            TextView distanceView = findViewById(R.id.dst);
-            layout.setVisibility(View.VISIBLE);
-            lngView.setText(Double.isNaN(lng) ? "-" : String.format(Locale.US, "%.6f", lng));
-            latView.setText(Double.isNaN(lat) ? "-" : String.format(Locale.US, "%.6f", lat));
-            altView.setText(Double.isNaN(alt) ? "-" : String.format(Locale.US, "%.2f", alt));
-            distanceView.setText(Double.isNaN(distance) ? "-" : String.format(Locale.US, "%.0fm", distance / 100.));
-        }
+    private void updateUILocationLabels(double lat, double lng, double alt, long distanceInCm, double speedInMetersPerSecond, long durationNanos) {
+        TextView lngView = findViewById(R.id.lng);
+        TextView latView = findViewById(R.id.lat);
+        TextView altView = findViewById(R.id.alt);
+        TextView distanceView = findViewById(R.id.dst);
+        TextView velocityView = findViewById(R.id.vel);
+        TextView durationView = findViewById(R.id.dur);
+        lngView.setText(Double.isNaN(lng) ? "-" : String.format(Locale.US, "%.6f", lng));
+        latView.setText(Double.isNaN(lat) ? "-" : String.format(Locale.US, "%.6f", lat));
+        altView.setText(Double.isNaN(alt) ? "-" : String.format(Locale.US, "%.0fm", alt));
+        distanceView.setText(String.format(Locale.US, "%.0fm", distanceInCm / 100.));
+        velocityView.setText(String.format(Locale.US, "%.1fkm/h", 3.6 * speedInMetersPerSecond));
+        durationView.setText(String.format(Locale.US, "%dh%dm", durationNanos / TimeUnit.HOURS.toNanos(1), (durationNanos % TimeUnit.HOURS.toNanos(1)) / TimeUnit.MINUTES.toNanos(1)));
     }
 
     private void startTrackingService() {
@@ -110,6 +108,8 @@ public class MainActivity extends AppCompatActivity {
             final Intent intent = new Intent(this.getApplication(), SporService.class);
             this.getApplication().startService(intent);
             this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+            GridLayout layout = findViewById(R.id.grid);
+            layout.setVisibility(View.VISIBLE);
             sporing = true;
         } else {
             requestPermissionLauncher.launch(missingPermissions);
@@ -120,6 +120,8 @@ public class MainActivity extends AppCompatActivity {
         this.getApplication().unbindService(serviceConnection);
         final Intent intent = new Intent(this.getApplication(), SporService.class);
         this.getApplication().stopService(intent);
+        GridLayout layout = findViewById(R.id.grid);
+        layout.setVisibility(View.INVISIBLE);
         sporing = false;
     }
 
