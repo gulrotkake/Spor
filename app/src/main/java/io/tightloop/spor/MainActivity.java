@@ -176,10 +176,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (sporing) {
             btn.setBackgroundColor(Color.rgb(228, 48, 33));
-            btn.setText("Deaktiver");
+            btn.setText(R.string.DeactivateButtonText);
         } else {
             btn.setBackgroundColor(Color.rgb(36, 201, 36));
-            btn.setText("Aktiver");
+            btn.setText(R.string.ActivateButtonText);
         }
     }
 }

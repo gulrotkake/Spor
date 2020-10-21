@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Spor</string>
+    <string name="ActivateButtonText">Aktiver</string>
+    <string name="DeactivateButtonText">Deaktiver</string>
+    <string name="Longitude">Lengdegrad</string>
+    <string name="Lattitude">Breddegrad</string>
+    <string name="Altitude">Høydemeter</string>
+    <string name="Velocity">Hastighet</string>
+    <string name="Duration">Tid</string>
+    <string name="Distance">Avstand</string>
+    <string name="title">s p o r</string>
+    <string name="BackgroundImageDescription">Background</string>
 </resources>
