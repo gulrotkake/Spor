@@ -90,13 +90,25 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         }, 1000, 2500);
+
+        if (SporService.isRunning()) { // Service exists, bind to it immediately.
+            final Intent intent = new Intent(this.getApplication(), SporService.class);
+            this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+            sporing = true;
+            GridLayout layout = findViewById(R.id.grid);
+            layout.setVisibility(View.VISIBLE);
+            updateButtonAppearance();
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         this.timer.cancel();
-        stopTrackingService();
+        // Spor service is running, only unbind so it keeps running.
+        if (sporService != null) {
+            this.getApplication().unbindService(serviceConnection);
+        }
     }
 
     private void updateUILocationLabels(double lat, double lng, double alt, long distanceInCm, double speedInMetersPerSecond, long durationNanos) {
