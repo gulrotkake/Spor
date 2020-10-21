@@ -35,6 +35,10 @@ import java.util.concurrent.TimeUnit;
 public class SporService extends Service implements LocationListener {
     private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyyMMddHHmmss'Z'", Locale.US);
     private static final int NOTIFICATION_ID = 1725186441;
+
+    // Global state https://stackoverflow.com/questions/17146822/when-is-a-started-and-bound-service-destroyed
+    private static boolean running = false;
+
     private final SporServiceBinder bind = new SporServiceBinder();
     public double alt = Double.NaN;
     public double lat = Double.NaN;
@@ -69,7 +73,13 @@ public class SporService extends Service implements LocationListener {
     @Override
     public void onCreate() {
         super.onCreate();
-        startForeground(NOTIFICATION_ID, getNotification());
+        running = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForeground(NOTIFICATION_ID, getNotification());
+        } else {
+            startService(new Intent(this, SporService.class));
+        }
+
         locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         activate();
     }
@@ -80,6 +90,7 @@ public class SporService extends Service implements LocationListener {
             Log.e("SporService", "Missing location permissions");
             return;
         }
+
         File storageDir = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "spor");
         if (storageDir.mkdirs()) {
             Log.i("SporService", "Created storage directory " + storageDir);
@@ -125,6 +136,7 @@ public class SporService extends Service implements LocationListener {
     public void onDestroy() {
         super.onDestroy();
         deactivate();
+        running = false;
         lat = lng = alt = Double.NaN;
         distanceInCentimeters = startNanos = startTimestamp = elapsedNanosLastUpdate = 0;
     }
@@ -182,5 +194,9 @@ public class SporService extends Service implements LocationListener {
         public SporService getService() {
             return SporService.this;
         }
+    }
+
+    public static boolean isRunning() {
+        return running;
     }
 }

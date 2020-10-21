@@ -19,11 +19,13 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
@@ -51,10 +53,21 @@ public class MainActivity extends AppCompatActivity {
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), grantedPermissions -> {
+                boolean allMatch = true;
+                for (Boolean granted : grantedPermissions.values()) {
+                    allMatch &= granted;
+                }
+                if (allMatch) {
+                    startTrackingService();
+                    updateButtonAppearance();
+                }
+                // Missing stream, targeting low SDK
+                /*
                 if (grantedPermissions.values().stream().allMatch(Boolean.TRUE::equals)) {
                     startTrackingService();
                     updateButtonAppearance();
                 }
+                */
             });
 
     @Override
@@ -102,9 +115,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startTrackingService() {
-        String[] missingPermissions = Stream.of(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE).filter(permission -> ActivityCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED).toArray(String[]::new);
+        // Targeting lower SDK, stream not available.
+        // String[] missingPermissions = Stream.of(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE).filter(permission -> ActivityCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED).toArray(String[]::new);
 
-        if (missingPermissions.length == 0) {
+        List<String> missingPermissions = new ArrayList<>();
+        for (String permission : Arrays.asList(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )) {
+            if (ActivityCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED) {
+                missingPermissions.add(permission);
+            }
+        }
+
+        if (missingPermissions.isEmpty()) {
             final Intent intent = new Intent(this.getApplication(), SporService.class);
             this.getApplication().startService(intent);
             this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
@@ -112,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
             layout.setVisibility(View.VISIBLE);
             sporing = true;
         } else {
-            requestPermissionLauncher.launch(missingPermissions);
+            requestPermissionLauncher.launch(missingPermissions.toArray(new String[0]));
         }
     }
 
