@@ -1,7 +1,56 @@
 package io.tightloop.spor;
 
+import android.util.Xml;
+
+import org.xmlpull.v1.XmlSerializer;
+
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public final class DistanceUtil {
+    private static final SimpleDateFormat DATE_FMT =
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
     private static final long EARTH_RADIUS = 6_378_136L;
+
+    private static class E implements AutoCloseable {
+        private final XmlSerializer xml;
+        private final String namespace;
+        private final String name;
+
+        E(XmlSerializer xml, String name) throws IOException {
+            this(xml, "", name);
+        }
+
+        E(XmlSerializer xml, String namespace, String name) throws IOException {
+            this.xml = xml;
+            this.namespace = namespace;
+            this.name = name;
+            xml.startTag(namespace, name);
+        }
+
+        @Override
+        public void close() throws IOException {
+            xml.endTag(namespace, name);
+        }
+
+        public E attr(String tag, String value) throws IOException {
+            xml.attribute("", tag, value);
+            return this;
+        }
+
+        public E attr(String tag, double value) throws IOException {
+            xml.attribute("", tag, String.format(Locale.US, "%f", value));
+            return this;
+        }
+    }
 
     private DistanceUtil() {
     }
@@ -16,5 +65,36 @@ public final class DistanceUtil {
         double distance = Math.pow(EARTH_RADIUS * c, 2) + Math.pow(alt1 - alt2, 2);
 
         return Math.sqrt(distance);
+    }
+
+    public static void spor2Gpx(File sporFile, File gpxFile) throws IOException {
+        long distance = 0;
+        try (DataInputStream dis = new DataInputStream(new FileInputStream(sporFile));
+             FileOutputStream fos = new FileOutputStream(gpxFile)) {
+
+            XmlSerializer xml = Xml.newSerializer();
+            xml.setOutput(fos, StandardCharsets.UTF_8.name());
+            xml.startDocument(StandardCharsets.UTF_8.name(), true);
+            try (E gpx = new E(xml, "http://www.topografix.com/GPX/1/0", "gpx").attr("version", "1.0")
+                    .attr("creator", "spor2gpx"); E trkseg = new E(xml, "trkseg")) {
+                while (dis.available() >= 24) {
+                    double lat = dis.readDouble();
+                    double lng = dis.readDouble();
+                    double alt = dis.readDouble();
+                    try (E trkpt = new E(xml, "trkpt").attr("lat", lat).attr("lon", lng)) {
+                        try (E ele = new E(xml, "ele")) {
+                            xml.text(String.format(Locale.US, "%f", alt));
+                        }
+
+                        try (E time = new E(xml, "time")) {
+                            xml.text(DATE_FMT.format(new Date(dis.readLong())));
+                        }
+                    }
+                }
+            } finally {
+                xml.endDocument();
+                xml.flush();
+            }
+        }
     }
 }

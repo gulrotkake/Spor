@@ -14,7 +14,6 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
@@ -23,23 +22,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class SporService extends Service implements LocationListener {
-    private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyyMMddHHmmss'Z'", Locale.US);
     private static final int NOTIFICATION_ID = 1725186441;
 
     // Global state https://stackoverflow.com/questions/17146822/when-is-a-started-and-bound-service-destroyed
     private static boolean running = false;
 
     private final SporServiceBinder bind = new SporServiceBinder();
+    private final SporRecorder recorder = new SporRecorder();
+
     public double alt = Double.NaN;
     public double lat = Double.NaN;
     public double lng = Double.NaN;
@@ -48,10 +41,6 @@ public class SporService extends Service implements LocationListener {
     private long elapsedNanosLastUpdate = 0;
     private long startNanos = 0;
     private LocationManager locationManager;
-    private DataOutputStream currentFile = null;
-
-    public SporService() {
-    }
 
     public long getElapsedNanos() {
         return startNanos > 0 ? SystemClock.elapsedRealtimeNanos() - startNanos : 0;
@@ -91,35 +80,18 @@ public class SporService extends Service implements LocationListener {
             return;
         }
 
-        File storageDir = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "spor");
-        if (storageDir.mkdirs()) {
-            Log.i("SporService", "Created storage directory " + storageDir);
+        if (!recorder.isRecording()) {
+            recorder.startRecording();
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, TimeUnit.SECONDS.toMillis(5), 5, this);
+            startNanos = SystemClock.elapsedRealtimeNanos();
+            startTimestamp = System.currentTimeMillis();
         }
-        String dateString = DATE_FMT.format(new Date());
-        File path = new File(storageDir, String.format("%s-%s.spor", getString(R.string.app_name), dateString));
-        if (currentFile == null) {
-            try {
-                currentFile = new DataOutputStream(new FileOutputStream(path));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, TimeUnit.SECONDS.toMillis(5), 5, this);
-        startNanos = SystemClock.elapsedRealtimeNanos();
-        startTimestamp = System.currentTimeMillis();
     }
 
     private void deactivate() {
-        if (currentFile != null) {
+        if (recorder.isRecording()) {
             locationManager.removeUpdates(this);
-            try {
-                currentFile.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                currentFile = null;
-            }
+            recorder.stopRecording();
         }
     }
 
@@ -148,12 +120,6 @@ public class SporService extends Service implements LocationListener {
 
     @Override
     public void onLocationChanged(@NonNull Location location) {
-        Log.i("SporService", "Received location update");
-
-        if (currentFile == null) {
-            return;
-        }
-
         double lat = location.getLatitude();
         double lng = location.getLongitude();
         double alt = location.getAltitude();
@@ -168,13 +134,8 @@ public class SporService extends Service implements LocationListener {
         this.elapsedNanosLastUpdate = location.getElapsedRealtimeNanos() - startNanos;
         long timestamp = startTimestamp + TimeUnit.NANOSECONDS.toMillis(elapsedNanosLastUpdate);
 
-        try {
-            currentFile.writeDouble(lat);
-            currentFile.writeDouble(lng);
-            currentFile.writeDouble(alt);
-            currentFile.writeLong(timestamp);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (recorder.isRecording()) {
+            recorder.recordDataPoint(timestamp, lat, lng, alt);
         }
     }
 

@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
             layout.setVisibility(View.VISIBLE);
             updateButtonAppearance();
         }
+        SporRecorder.recoverRecordings();
     }
 
     @Override
