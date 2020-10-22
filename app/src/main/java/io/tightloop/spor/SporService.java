@@ -31,7 +31,6 @@ public class SporService extends Service implements LocationListener {
     private static boolean running = false;
 
     private final SporServiceBinder bind = new SporServiceBinder();
-    private final SporRecorder recorder = new SporRecorder();
 
     public double alt = Double.NaN;
     public double lat = Double.NaN;
@@ -41,6 +40,7 @@ public class SporService extends Service implements LocationListener {
     private long elapsedNanosLastUpdate = 0;
     private long startNanos = 0;
     private LocationManager locationManager;
+    private SporRecorder recorder;
 
     public long getElapsedNanos() {
         return startNanos > 0 ? SystemClock.elapsedRealtimeNanos() - startNanos : 0;
@@ -69,6 +69,7 @@ public class SporService extends Service implements LocationListener {
             startService(new Intent(this, SporService.class));
         }
 
+        recorder = new SporRecorder(getApplicationContext().getFilesDir());
         locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         activate();
     }

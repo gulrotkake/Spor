@@ -61,13 +61,6 @@ public class MainActivity extends AppCompatActivity {
                     startTrackingService();
                     updateButtonAppearance();
                 }
-                // Missing stream, targeting low SDK
-                /*
-                if (grantedPermissions.values().stream().allMatch(Boolean.TRUE::equals)) {
-                    startTrackingService();
-                    updateButtonAppearance();
-                }
-                */
             });
 
     @Override
@@ -98,8 +91,9 @@ public class MainActivity extends AppCompatActivity {
             GridLayout layout = findViewById(R.id.grid);
             layout.setVisibility(View.VISIBLE);
             updateButtonAppearance();
+        } else {
+            SporRecorder.recoverRecordings(this.getApplicationContext().getFilesDir());
         }
-        SporRecorder.recoverRecordings();
     }
 
     @Override
@@ -133,8 +127,7 @@ public class MainActivity extends AppCompatActivity {
 
         List<String> missingPermissions = new ArrayList<>();
         for (String permission : Arrays.asList(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                Manifest.permission.ACCESS_FINE_LOCATION
         )) {
             if (ActivityCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED) {
                 missingPermissions.add(permission);

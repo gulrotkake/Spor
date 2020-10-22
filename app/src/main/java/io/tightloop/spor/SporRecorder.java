@@ -1,6 +1,5 @@
 package io.tightloop.spor;
 
-import android.os.Environment;
 import android.util.Log;
 
 import java.io.DataOutputStream;
@@ -13,10 +12,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public final class SporRecorder {
-    private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyyMMddHHmmss'Z'", Locale.US);
-    private static final File STORAGE_DIR = new File(Environment.getExternalStorageDirectory().getAbsoluteFile(), "spor");
+    private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US);
 
     private static class ActiveRecording implements AutoCloseable {
         private final DataOutputStream outputStream;
@@ -46,22 +45,20 @@ public final class SporRecorder {
     }
 
     private final List<ActiveRecording> activeRecordings;
+    private final File storageDir;
 
-    public SporRecorder() {
+    public SporRecorder(File storageDir) {
+        this.storageDir = storageDir;
         this.activeRecordings = new ArrayList<>(1);
     }
 
     public void startRecording() {
-        if (STORAGE_DIR.mkdirs()) {
-            Log.i("SporService", "Created storage directory " + STORAGE_DIR);
-        }
-
         if (activeRecordings.size() > 0) {
             Log.e("SporRecorder", "Attempted to start recorder while recording active");
             throw new RuntimeException("Already recording.");
         }
 
-        activeRecordings.add(new ActiveRecording(STORAGE_DIR));
+        activeRecordings.add(new ActiveRecording(storageDir));
     }
 
     public boolean isRecording() {
@@ -89,16 +86,12 @@ public final class SporRecorder {
         }
     }
 
-    public static void recoverRecordings() {
-        if (!STORAGE_DIR.isDirectory()) {
-            return;
-        }
-
+    public static void recoverRecordings(File storageDir) {
         // Attempt to recover any .spor files
-        for (File sporFile : STORAGE_DIR.listFiles((dir, name) -> dir.equals(STORAGE_DIR) && name.endsWith(".spor"))) {
+        for (File sporFile : storageDir.listFiles((dir, name) -> Objects.equals(storageDir, dir) && name.endsWith(".spor"))) {
             try {
                 String fileName = sporFile.getName().substring(0, sporFile.getName().lastIndexOf('.'));
-                File gpxFile = new File(STORAGE_DIR, String.format("%s.gpx", fileName));
+                File gpxFile = new File(storageDir, String.format("%s.gpx", fileName));
                 DistanceUtil.spor2Gpx(sporFile, gpxFile);
                 Log.i("SporRecorder", String.format("Recovered %s", gpxFile));
             } catch (IOException e) {
