@@ -98,12 +98,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         this.timer.cancel();
         // Spor service is running, only unbind so it keeps running.
         if (sporService != null) {
             this.getApplication().unbindService(serviceConnection);
         }
+        super.onDestroy();
     }
 
     private void updateUILocationLabels(double lat, double lng, double alt, long distanceInCm, double speedInMetersPerSecond, long durationNanos) {
