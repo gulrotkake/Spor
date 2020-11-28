@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -96,12 +97,31 @@ public class SporService extends Service implements LocationListener {
         }
     }
 
+    private static Class<?> getMainActivityClass(Context context) {
+        String packageName = context.getPackageName();
+        Intent launchIntent =
+                context.getPackageManager().getLaunchIntentForPackage(packageName);
+        String className = launchIntent.getComponent().getClassName();
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     private Notification getNotification() {
+        Intent intent = new Intent(this, getMainActivityClass(this));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         NotificationChannel channel = new NotificationChannel("channel_01", "My Channel", NotificationManager.IMPORTANCE_DEFAULT);
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
-        Notification.Builder builder = new Notification.Builder(getApplicationContext(), "channel_01").setAutoCancel(true);
+        Notification.Builder builder = new Notification.Builder(getApplicationContext(), "channel_01")
+                .setAutoCancel(true)
+                .setSmallIcon(R.drawable.icon)
+                .setContentTitle("Sporing")
+                .setContentIntent(pendingIntent);
         return builder.build();
     }
 
