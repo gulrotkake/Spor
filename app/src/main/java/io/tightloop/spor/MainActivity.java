@@ -20,7 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         // String[] missingPermissions = Stream.of(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE).filter(permission -> ActivityCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED).toArray(String[]::new);
 
         List<String> missingPermissions = new ArrayList<>();
-        for (String permission : Arrays.asList(
+        for (String permission : Collections.singletonList(
                 Manifest.permission.ACCESS_FINE_LOCATION
         )) {
             if (ActivityCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED) {
