@@ -5,34 +5,30 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.GridLayout;
-import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 public class MainActivity extends AppCompatActivity {
     private Timer timer;
     private SporService sporService;
-    private boolean sporing = false;
+    private SporViewModel sporViewModel;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
@@ -59,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (allMatch) {
                     startTrackingService();
-                    updateButtonAppearance();
                 }
             });
 
@@ -68,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        updateButtonAppearance();
+        sporViewModel = new ViewModelProvider(this).get(SporViewModel.class);
 
         this.timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -76,9 +71,9 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 runOnUiThread(() -> {
                     if (sporService != null) {
-                        updateUILocationLabels(sporService.lat, sporService.lng, sporService.alt, sporService.distanceInCentimeters, sporService.getSpeedInMetersPerSecond(), sporService.getElapsedNanos());
+                        sporViewModel.setLocationData(new SporViewModel.LocationData(sporService.lat, sporService.lng, sporService.alt, sporService.distanceInCentimeters, sporService.getSpeedInMetersPerSecond(), sporService.getElapsedNanos()));
                     } else {
-                        updateUILocationLabels(Double.NaN, Double.NaN, Double.NaN, 0, 0, 0);
+                        sporViewModel.setLocationData(new SporViewModel.LocationData(Double.NaN, Double.NaN, Double.NaN, 0, 0, 0));
                     }
                 });
             }
@@ -87,11 +82,9 @@ public class MainActivity extends AppCompatActivity {
         if (SporService.isRunning()) { // Service exists, bind to it immediately.
             final Intent intent = new Intent(this.getApplication(), SporService.class);
             this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-            sporing = true;
-            GridLayout layout = findViewById(R.id.grid);
-            layout.setVisibility(View.VISIBLE);
-            updateButtonAppearance();
+            sporViewModel.setSporingState(true);
         } else {
+            sporViewModel.setSporingState(false);
             SporRecorder.recoverRecordings(this.getApplicationContext().getFilesDir());
         }
     }
@@ -104,21 +97,6 @@ public class MainActivity extends AppCompatActivity {
             this.getApplication().unbindService(serviceConnection);
         }
         super.onDestroy();
-    }
-
-    private void updateUILocationLabels(double lat, double lng, double alt, long distanceInCm, double speedInMetersPerSecond, long durationNanos) {
-        TextView lngView = findViewById(R.id.lng);
-        TextView latView = findViewById(R.id.lat);
-        TextView altView = findViewById(R.id.alt);
-        TextView distanceView = findViewById(R.id.dst);
-        TextView velocityView = findViewById(R.id.vel);
-        TextView durationView = findViewById(R.id.dur);
-        lngView.setText(Double.isNaN(lng) ? "-" : String.format(Locale.US, "%.6f", lng));
-        latView.setText(Double.isNaN(lat) ? "-" : String.format(Locale.US, "%.6f", lat));
-        altView.setText(Double.isNaN(alt) ? "-" : String.format(Locale.US, "%.0fm", alt));
-        distanceView.setText(String.format(Locale.US, "%.0fm", distanceInCm / 100.));
-        velocityView.setText(String.format(Locale.US, "%.1fkm/h", 3.6 * speedInMetersPerSecond));
-        durationView.setText(String.format(Locale.US, "%dh%dm", durationNanos / TimeUnit.HOURS.toNanos(1), (durationNanos % TimeUnit.HOURS.toNanos(1)) / TimeUnit.MINUTES.toNanos(1)));
     }
 
     private void startTrackingService() {
@@ -140,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
             this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
             GridLayout layout = findViewById(R.id.grid);
             layout.setVisibility(View.VISIBLE);
-            sporing = true;
+            sporViewModel.setSporingState(true);
         } else {
             requestPermissionLauncher.launch(missingPermissions.toArray(new String[0]));
         }
@@ -150,30 +128,14 @@ public class MainActivity extends AppCompatActivity {
         this.getApplication().unbindService(serviceConnection);
         final Intent intent = new Intent(this.getApplication(), SporService.class);
         this.getApplication().stopService(intent);
-        GridLayout layout = findViewById(R.id.grid);
-        layout.setVisibility(View.INVISIBLE);
-        sporing = false;
+        sporViewModel.setSporingState(false);
     }
 
-    public void onTrackingButtonClicked(View view) {
-        if (sporing) {
+    public void toggleTracking() {
+        if (sporViewModel.getSporingState().getValue()) {
             stopTrackingService();
         } else {
             startTrackingService();
-        }
-        updateButtonAppearance();
-    }
-
-    private void updateButtonAppearance() {
-        Button btn = findViewById(R.id.toggle);
-        btn.setTextColor(Color.WHITE);
-
-        if (sporing) {
-            btn.setBackgroundColor(Color.rgb(228, 48, 33));
-            btn.setText(R.string.DeactivateButtonText);
-        } else {
-            btn.setBackgroundColor(Color.rgb(36, 201, 36));
-            btn.setText(R.string.ActivateButtonText);
         }
     }
 }
