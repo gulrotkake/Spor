@@ -10,4 +10,6 @@
     <string name="Distance">Avstand</string>
     <string name="title">s p o r</string>
     <string name="BackgroundImageDescription">Background</string>
+    <string name="list_description">Fullførte Spor</string>
+    <string name="list_title">Fullførte</string>
 </resources>
