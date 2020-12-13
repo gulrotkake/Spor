@@ -23,8 +23,8 @@ public class SporViewModel extends ViewModel {
         }
     }
 
-    private MutableLiveData<LocationData> locationData = new MutableLiveData<>();
-    private MutableLiveData<Boolean> sporing = new MutableLiveData<>();
+    private final MutableLiveData<LocationData> locationData = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> sporing = new MutableLiveData<>();
 
     public MutableLiveData<LocationData> getLocationData() {
         return locationData;

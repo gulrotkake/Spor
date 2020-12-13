@@ -88,7 +88,7 @@ public final class SporRecorder {
 
     public static void recoverRecordings(File storageDir) {
         // Attempt to recover any .spor files
-        for (File sporFile : storageDir.listFiles((dir, name) -> Objects.equals(storageDir, dir) && name.endsWith(".spor"))) {
+        for (File sporFile : Objects.requireNonNull(storageDir.listFiles((dir, name) -> Objects.equals(storageDir, dir) && name.endsWith(".spor")))) {
             try {
                 String fileName = sporFile.getName().substring(0, sporFile.getName().lastIndexOf('.'));
                 File gpxFile = new File(storageDir, String.format("%s.gpx", fileName));

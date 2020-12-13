@@ -16,7 +16,6 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class Spor extends Fragment {
-    private SporViewModel sporViewModel;
 
     public Spor() {
     }
@@ -30,10 +29,8 @@ public class Spor extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_spor, container, false);
-        sporViewModel = new ViewModelProvider(requireActivity()).get(SporViewModel.class);
-        sporViewModel.getLocationData().observe(getViewLifecycleOwner(), locationData -> {
-            updateUILocationLabels(view, locationData.lat, locationData.lng, locationData.alt, locationData.distanceInCm, locationData.speedInMetersPerSecond, locationData.durationNano);
-        });
+        SporViewModel sporViewModel = new ViewModelProvider(requireActivity()).get(SporViewModel.class);
+        sporViewModel.getLocationData().observe(getViewLifecycleOwner(), locationData -> updateUILocationLabels(view, locationData.lat, locationData.lng, locationData.alt, locationData.distanceInCm, locationData.speedInMetersPerSecond, locationData.durationNano));
 
         final Button btn = view.findViewById(R.id.toggle);
         btn.setOnClickListener(this::onTrackingButtonClicked);

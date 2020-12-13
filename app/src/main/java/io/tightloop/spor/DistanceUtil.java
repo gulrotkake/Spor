@@ -16,7 +16,7 @@ import java.util.Locale;
 
 public final class DistanceUtil {
     private static final SimpleDateFormat DATE_FMT =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 
     private static final long EARTH_RADIUS = 6_378_136L;
 
@@ -68,25 +68,24 @@ public final class DistanceUtil {
     }
 
     public static void spor2Gpx(File sporFile, File gpxFile) throws IOException {
-        long distance = 0;
         try (DataInputStream dis = new DataInputStream(new FileInputStream(sporFile));
              FileOutputStream fos = new FileOutputStream(gpxFile)) {
 
             XmlSerializer xml = Xml.newSerializer();
             xml.setOutput(fos, StandardCharsets.UTF_8.name());
             xml.startDocument(StandardCharsets.UTF_8.name(), true);
-            try (E gpx = new E(xml, "http://www.topografix.com/GPX/1/0", "gpx").attr("version", "1.0")
-                    .attr("creator", "spor2gpx"); E trkseg = new E(xml, "trkseg")) {
+            try (E ignored0 = new E(xml, "http://www.topografix.com/GPX/1/0", "gpx").attr("version", "1.0")
+                    .attr("creator", "spor2gpx"); E ignored1 = new E(xml, "trkseg")) {
                 while (dis.available() >= 24) {
                     double lat = dis.readDouble();
                     double lng = dis.readDouble();
                     double alt = dis.readDouble();
-                    try (E trkpt = new E(xml, "trkpt").attr("lat", lat).attr("lon", lng)) {
-                        try (E ele = new E(xml, "ele")) {
+                    try (E ignored2 = new E(xml, "trkpt").attr("lat", lat).attr("lon", lng)) {
+                        try (E ignored3 = new E(xml, "ele")) {
                             xml.text(String.format(Locale.US, "%f", alt));
                         }
 
-                        try (E time = new E(xml, "time")) {
+                        try (E ignored4 = new E(xml, "time")) {
                             xml.text(DATE_FMT.format(new Date(dis.readLong())));
                         }
                     }

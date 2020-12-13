@@ -15,11 +15,16 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -27,6 +32,8 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 public class MainActivity extends AppCompatActivity {
     private Timer timer;
+    private Spor spor;
+    private History history;
     private SporService sporService;
     private SporViewModel sporViewModel;
 
@@ -63,8 +70,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        sporViewModel = new ViewModelProvider(this).get(SporViewModel.class);
-
+        this.spor = new Spor();
+        this.history = new History();
+        this.sporViewModel = new ViewModelProvider(this).get(SporViewModel.class);
         this.timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -79,14 +87,35 @@ public class MainActivity extends AppCompatActivity {
             }
         }, 1000, 2500);
 
+        BottomNavigationView.OnNavigationItemSelectedListener listener = item -> {
+            if (item.getItemId() == R.id.home) {
+                openFragment(spor);
+                return true;
+            }
+            if (item.getItemId() == R.id.list) {
+                openFragment(history);
+                return true;
+            }
+            return false;
+        };
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottom_navigation);
+        bottomNavigation.setOnNavigationItemSelectedListener(listener);
+
         if (SporService.isRunning()) { // Service exists, bind to it immediately.
             final Intent intent = new Intent(this.getApplication(), SporService.class);
             this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
             sporViewModel.setSporingState(true);
         } else {
             sporViewModel.setSporingState(false);
-            SporRecorder.recoverRecordings(this.getApplicationContext().getFilesDir());
+            SporRecorder.recoverRecordings(this.getApplicationContext().getExternalFilesDir(null));
         }
+    }
+
+    public void openFragment(Fragment fragment) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.layout, fragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     @Override
@@ -132,7 +161,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void toggleTracking() {
-        if (sporViewModel.getSporingState().getValue()) {
+        boolean state = Objects.requireNonNull(sporViewModel.getSporingState().getValue());
+        if (state) {
             stopTrackingService();
         } else {
             startTrackingService();

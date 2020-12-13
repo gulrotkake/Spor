@@ -70,7 +70,7 @@ public class SporService extends Service implements LocationListener {
             startService(new Intent(this, SporService.class));
         }
 
-        recorder = new SporRecorder(getApplicationContext().getFilesDir());
+        recorder = new SporRecorder(getApplicationContext().getExternalFilesDir(null));
         locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         activate();
     }
